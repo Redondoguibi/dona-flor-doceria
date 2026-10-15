@@ -27,32 +27,9 @@
   // The catalog is self-contained and works even when the HTML is opened from disk.
   const catalog = Array.isArray(window.DONA_FLOR_CATALOGO) ? window.DONA_FLOR_CATALOGO : [];
   // Descrições dos produtos que possuem informações disponíveis.
-  const productDetails = Object.freeze({
-    'Doces|Bolos|ALPINO': {
-      description: 'Bolo de chocolate com recheio inspirado no bombom Alpino e cobertura de ganache com pedaços do bombom.'
-    },
-    'Doces|Bolos|CHOCROCANTE': {
-      description: 'Bolo de chocolate com recheio cremoso crocante, cobertura de marshmallow e crocante.'
-    },
-    'Doces|Bolos|BRIGADEIRO': {
-      description: 'Massa de chocolate com recheio e cobertura de brigadeiro. A decoração pode variar.'
-    },
-    'Doces|Bolos|FLORESTA NEGRA': {
-      description: 'Bolo de chocolate com brigadeiro, chantilly e cerejas, decorado com chocolate.'
-    },
-    'Doces|Bolos|MOUSSE DE DOCE DE LEITE': {
-      description: 'Bolo de massa clara com mousse de doce de leite, marshmallow, calda de caramelo e crocante.'
-    },
-    'Doces|Tortas|AVELÃ': {
-      description: 'Torta com pão de ló e mousse de avelã.'
-    },
-    'Doces|Tortas|BANOFFE': {
-      description: 'Torta com base de biscoito, doce de leite, banana, chantilly e canela.'
-    },
-    'Doces|Tortas|LIMÃO': {
-      description: 'Torta de limão com recheio de leite condensado e cobertura de suspiro.'
-    }
-  });
+  const productDetails = Object.freeze(Object.fromEntries(catalog.filter(item => item.descricao).map(item => [
+    item.area + '|' + item.categoria + '|' + item.nome, {description:item.descricao}
+  ])));
   const detailDialog = document.getElementById('produto-dialog');
   const detailTitle = document.getElementById('produto-dialog-titulo');
   const detailCategory = document.getElementById('produto-dialog-categoria');
@@ -76,8 +53,10 @@
     const detail = productDetails[item.area + '|' + item.categoria + '|' + item.nome];
     detailTitle.textContent = item.nome;
     detailCategory.textContent = item.area + ' · ' + item.categoria;
-    detailDescription.textContent = detail ? detail.description : 'A descrição deste produto ainda não está disponível. Consulte a unidade para informações sobre ingredientes, tamanhos, preços e disponibilidade.';
+    detailDescription.textContent = detail ? detail.description : 'Fale com a nossa equipe para conhecer os ingredientes, tamanhos e opções deste produto.';
     detailDescription.hidden = false;
+    const photo = document.getElementById('produto-dialog-foto');
+    if(photo){photo.hidden=!item.imagem_original;if(item.imagem_original)photo.href=item.imagem_original;else photo.removeAttribute('href');}
     if (typeof detailDialog.showModal === 'function') {
       if (!detailDialog.open) detailDialog.showModal();
     } else {
@@ -91,7 +70,7 @@
   shareButton?.addEventListener('click', async () => {
     if (!openedProduct) return;
     const link = productLink(openedProduct);
-    if (!link) { shareFeedback.textContent = 'Esta prévia local não tem endereço público compartilhável. Abra o site hospedado para copiar o link.'; return; }
+    if (!link) { shareFeedback.textContent = 'Abra o endereço público do site para compartilhar este produto.'; return; }
     try {
       if (!navigator.clipboard?.writeText) throw new Error('Clipboard indisponível');
       await navigator.clipboard.writeText(link);
@@ -368,7 +347,7 @@
   // Exibe apenas o cardápio atualizado.
   const menuStatus = document.getElementById('cardapio-status');
   const menuContent = document.getElementById('cardapio-conteudo');
-  function emptyMenu(reason = 'A programação para as próximas datas ainda não está disponível.') {
+  function emptyMenu(reason = 'Consulte a unidade para conhecer o cardápio de hoje.') {
     if (!menuContent) return;
     menuContent.replaceChildren();
     const block = make('div', 'menu-empty');
@@ -396,8 +375,11 @@
       ((Array.isArray(day.pratos) && day.pratos.length > 0) ||
        (typeof day.aviso === 'string' && day.aviso.trim()))
     ).sort((a,b) => a.data.localeCompare(b.data)).slice(0,7);
-    if (!days.length) return emptyMenu();
+    if (!days.length) {
+      return emptyMenu();
+    }
     menuContent.replaceChildren();
+    if (!days.some(day => day.data === current)) menuContent.append(make('p', 'menu-day-message', 'Para conhecer o cardápio de hoje, entre em contato com a unidade.'));
     for (const day of days) {
       const article = make('article', 'menu-day');
       const heading = make('h4', '', day.titulo || fmtDate(parseISODate(day.data)));
@@ -426,6 +408,7 @@
       if (notice || ul.childElementCount) menuContent.append(article);
     }
     if (!menuContent.childElementCount) return emptyMenu();
+    if (days.length < 7) menuContent.append(make('p', 'menu-day-message', 'Para outras datas, consulte nossa equipe.'));
     if (menuStatus) {
       const observed = new Intl.DateTimeFormat('pt-BR').format(parseISODate(data.atualizado_em));
       menuStatus.textContent = `Atualizado em ${observed} · sujeito a alterações`;
@@ -444,7 +427,7 @@
         data = await r.json();
       }
       showMenu(data);
-      if(location.protocol === 'file:') menuStatus.textContent += ' · Cópia offline gerada; confirme a versão atual com a unidade.';
+      if(location.protocol === 'file:') menuStatus.textContent += ' · Confirme a disponibilidade diretamente com a unidade.';
       lastDate = localDateISO();
     } catch(error) {
       console.error('[DONA-FLOR MENU_LOAD_FAILED]', {resource:'cardapio.json',message:error.message});
