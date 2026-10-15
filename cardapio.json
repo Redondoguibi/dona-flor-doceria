@@ -1,5 +1,5 @@
 {
-  "atualizado_em": "2026-10-09",
+  "atualizado_em": "2026-10-15",
   "dias": [
     {
       "data": "2026-10-09",
@@ -68,7 +68,21 @@
           "preco": 45
         }
       ]
+    },
+    {
+      "data": "2026-10-15",
+      "titulo": "Quinta-feira",
+      "pratos": [
+        {
+          "nome": "Espaguete ao sugo com filé de frango à parmegiana",
+          "preco": 38
+        },
+        {
+          "nome": "Charutinho de repolho recheado de carne moída e arroz branco",
+          "preco": 38
+        }
+      ]
     }
   ],
-  "versao": "menu-ad1f720b96e75936-r2"
+  "versao": "menu-448e027569141817"
 }
